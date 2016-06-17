@@ -1,16 +1,21 @@
+'use strict';
+
 var express = require('express');
 var router = express.Router();
 var key = require('../config/config.json');
 var bing = require('node-bing-api')(key);
+var imageModel = require('../models/imageModel.js');
 
 console.log(key);
+
+
 
 
 router.get('/api/imagesearch/:image/', function(req, res, next) {
   var results = [];
   var image = req.params.image;
-  var isValidNum = Number(req.params.num) == req.params.num;
-  var num = (isValidNum && req.params.num) || 10;
+  var isValidNum = Number(req.query.offset) == req.query.offset;
+  var num = (isValidNum && req.query.offset) || 10;
 
   console.log(num);
   // console.log(isValidNum);
@@ -37,14 +42,33 @@ router.get('/api/imagesearch/:image/', function(req, res, next) {
 
   promise.then(function (val) {
     console.log("done");
-    console.log(val[0]);
-    return res.json(val
-      // {
-      // url: val[1].url,
-      // snippet : val[1].snippet,
-      // thumbnail : val[1].thumbnail,
-      // context : val[1].context}
-    );
+    // console.log(val[0]);
+    //to do:
+    //add term and when to the database
+    // term display search when is the time
+    val.map(function (imageSave) {
+      // console.log(v);
+      var image = new imageModel({
+        term : imageSave.snippet
+      });
+
+    });
+    return res.json(val);
+  });
+
+});
+
+router.get('/api/latest/imagesearch/', function (req, res, next) {
+  imageModel.find(function(err, images){
+      if(err) {
+          return res.json(500, {
+              message: 'Error getting image.'
+          });
+      }
+      let myName = "Ahmed";
+      return res.json({
+        message: `my name is ${myName}`
+      });
   });
 
 });
