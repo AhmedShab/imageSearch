@@ -6,7 +6,7 @@ var key = require('../config/config.json');
 var bing = require('node-bing-api')(key);
 var imageModel = require('../models/imageModel.js');
 
-console.log(key);
+// console.log(key);
 
 
 
@@ -17,9 +17,9 @@ router.get('/api/imagesearch/:image/', function(req, res, next) {
   var isValidNum = Number(req.query.offset) == req.query.offset;
   var num = (isValidNum && req.query.offset) || 10;
 
-  console.log(num);
+  // console.log(num);
   // console.log(isValidNum);
-  console.log(image);
+  // console.log(image);
   var promise = new Promise(
     function (resolve, reject) {
       bing.images(image, {
@@ -41,34 +41,61 @@ router.get('/api/imagesearch/:image/', function(req, res, next) {
   );
 
   promise.then(function (val) {
-    console.log("done");
     // console.log(val[0]);
     //to do:
     //add term and when to the database
     // term display search when is the time
-    val.map(function (imageSave) {
-      // console.log(v);
+      // console.log(imageSave.snippet);
+
+      console.log(req.params.image);
+
       var image = new imageModel({
-        term : imageSave.snippet
+        term : req.params.image
       });
 
-    });
+      image.save();
+
+
+    console.log('done saving');
     return res.json(val);
   });
 
 });
 
 router.get('/api/latest/imagesearch/', function (req, res, next) {
-  imageModel.find(function(err, images){
+  let results = [];
+
+  // put everything in a Promise so that I get the results from the database first then show it
+  new Promise((resolve, reject) => {
+
+    imageModel
+    .find(function(err, images){
       if(err) {
-          return res.json(500, {
-              message: 'Error getting image.'
-          });
+        return res.json(500, {
+          message: 'Error getting image.'
+        });
       }
-      let myName = "Ahmed";
-      return res.json({
-        message: `my name is ${myName}`
+      images.map((item) => {
+        results.push({
+          term : item.term,
+          when : item.when
+        });
+        // console.log(item);
+        resolve(results);
       });
+      // console.log("1");
+      // console.log(images);
+  })
+    .limit(10)
+    .sort({when: -1});
+    // console.log(images);
+    // console.log("2");
+  })
+
+    .then((results) => {
+    // console.log("3");
+    // console.log(results);
+    res.json(results);
   });
 
 });
